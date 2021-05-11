@@ -60,6 +60,8 @@ app.get("/urls/new", (req, res) => {
 //updates an existing url in the database, and redirects back to URLs page
 app.post("/urls/:id", (req, res) => {
   //TO DO
+  // console.log();
+  urlDatabase[req.params.id] = req.body.longURL;
 
   res.redirect("/urls");
 });
