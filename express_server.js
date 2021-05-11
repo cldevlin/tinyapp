@@ -17,7 +17,7 @@ function generateRandomString() {
   for (let i = 0; i < 6; i++) {
     output += String.fromCharCode(Math.floor(Math.random() * 26 + 65 + 32));
   }
-  // console.log(output)
+  return output;
 }
 
 app.get("/", (req, res) => {
@@ -32,7 +32,21 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  // console.log("req.params.shortURL", req.params.shortURL);
+  // console.log("urlDatabase: ", urlDatabase);
+  const longURL = urlDatabase[req.params.shortURL];
+  // console.log("longUrl: ", longURL);
+  if (longURL === undefined) {
+    res.statusCode = 404;
+    res.end("Error: shortURL does not exist");
+  } else {
+    res.redirect(longURL);
+  }
+});
+
 app.get("/urls", (req, res) => {
+
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
@@ -41,17 +55,20 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  // console.log("Line 59 req.body: ", req.body);  // Log the POST request body to the console
+  let tempString = generateRandomString();
+  urlDatabase[tempString] = req.body.longURL;
+  res.redirect(`/urls/${tempString}`);
+  // res.send("Ok");         // Respond with 'Ok' (we will replace this)
+
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
