@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
+app.use(cookieParser())
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -32,6 +35,13 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+
+app.post("/login", (req, res) => {
+  // console.log("req.body **************** ", req.body);
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
+});
+
 //redirects to the actual page when user clicks on short url link
 app.get("/u/:shortURL", (req, res) => {
   // console.log("req.params.shortURL", req.params.shortURL);
@@ -48,13 +58,14 @@ app.get("/u/:shortURL", (req, res) => {
 
 //renders URLs page with list of all the URLs currently in the database
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  // console.log(req.cookies);
+  const templateVars = { urls: urlDatabase, username: req.cookies.username };
   res.render("urls_index", templateVars);
 });
 
 //renders new URL page
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  res.render("urls_new", { username: req.cookies.username });
 });
 
 //updates an existing url in the database, and redirects back to URLs page
@@ -75,7 +86,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //renders individual page for a URL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies.username };
   res.render("urls_show", templateVars);
 });
 
