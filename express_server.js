@@ -32,6 +32,7 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+//redirects to the actual page when user clicks on short url link
 app.get("/u/:shortURL", (req, res) => {
   // console.log("req.params.shortURL", req.params.shortURL);
   // console.log("urlDatabase: ", urlDatabase);
@@ -45,22 +46,38 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+//renders URLs page with list of all the URLs currently in the database
 app.get("/urls", (req, res) => {
-
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
+//renders new URL page
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//updates an existing url in the database, and redirects back to URLs page
+app.post("/urls/:id", (req, res) => {
+  //TO DO
 
+  res.redirect("/urls");
+});
+
+// removes a URL resource and redirects back to URLs page
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
+
+//renders individual page for a URL
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
+//generates a new shortURL, adds it to the database, and redirects to the "show" page
 app.post("/urls", (req, res) => {
   // console.log("Line 59 req.body: ", req.body);  // Log the POST request body to the console
   let tempString = generateRandomString();
@@ -70,11 +87,6 @@ app.post("/urls", (req, res) => {
 
 });
 
-// removes a URL resource
-app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
-});
 
 
 // LISTEN
