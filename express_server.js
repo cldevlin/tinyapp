@@ -35,6 +35,10 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+});
 
 app.post("/login", (req, res) => {
   // console.log("req.body **************** ", req.body);
