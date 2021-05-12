@@ -14,10 +14,10 @@
       </div>
     </div>
     <div class="nav navbar-nav float-md-right">
-      <% if (username) { %>
+      <% if (user) { %>
         <form class="form-inline" method="POST" action="/logout">
           <div style="margin-left: 1em;">
-            Logged in as: <%= username %><button class="btn btn-outline-dark" type="submit"
+            Logged in as: <%= user.email %><button class="btn btn-outline-dark" type="submit"
                 style=" margin-left: 1em;">Logout</button>
           </div>
         </form>

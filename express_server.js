@@ -15,6 +15,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  "abcdef": {
+    id: "abcdef",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "zyxwvu": {
+    id: "zyxwvu",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+};
+
 function generateRandomString() {
   let output = "";
   for (let i = 0; i < 6; i++) {
@@ -22,6 +35,18 @@ function generateRandomString() {
   }
   return output;
 }
+
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  users[id] = {
+    id,
+    email: req.body.email,
+    password: req.body.password
+  };
+  res.cookie("user_id", id);
+  console.log("users: ", users);
+  res.redirect("/urls");
+});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -37,18 +62,20 @@ app.get("/hello", (req, res) => {
 
 //renders register page
 app.get("/register", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies.username };
+  const templateVars = { user: users[req.cookies.user_id] };
   res.render("register", templateVars);
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
+//sets user_id cookie
 app.post("/login", (req, res) => {
   // console.log("req.body **************** ", req.body);
-  res.cookie("username", req.body.username);
+  //CHECK THIS:vvvv
+  res.cookie("user_id", req.body.user_id);
   res.redirect("/urls");
 });
 
@@ -69,13 +96,13 @@ app.get("/u/:shortURL", (req, res) => {
 //renders URLs page with list of all the URLs currently in the database
 app.get("/urls", (req, res) => {
   // console.log(req.cookies);
-  const templateVars = { urls: urlDatabase, username: req.cookies.username };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
 //renders new URL page
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { username: req.cookies.username });
+  res.render("urls_new", { user: users[req.cookies.user_id] });
 });
 
 //updates an existing url in the database, and redirects back to URLs page
@@ -96,7 +123,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //renders individual page for a URL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies.username };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars);
 });
 
