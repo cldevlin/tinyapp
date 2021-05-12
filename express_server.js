@@ -11,13 +11,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "aJ48lW" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "aJ48lW" }
 };
 
 const users = {
-  "abcdef": {
-    id: "abcdef",
+  "aJ48lW": {
+    id: "aJ48lW",
     email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
@@ -39,7 +39,7 @@ function generateRandomString() {
 function lookUpEmail(email) {
   console.log("email: ", email);
   for (let id in users) {
-    console.log("id.email: ", id.email);
+    console.log("users[id].email: ", users[id].email);
     if (users[id].email === email) {
       return id;
     }
@@ -120,13 +120,13 @@ app.post("/logout", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   // console.log("req.params.shortURL", req.params.shortURL);
   // console.log("urlDatabase: ", urlDatabase);
-  const longURL = urlDatabase[req.params.shortURL];
+  const urlID = urlDatabase[req.params.shortURL];
   // console.log("longUrl: ", longURL);
-  if (longURL === undefined) {
+  if (urlID === undefined) {
     res.statusCode = 404;
     res.end("Error: shortURL does not exist");
   } else {
-    res.redirect(longURL);
+    res.redirect(urlID.longURL);
   }
 });
 
@@ -143,7 +143,7 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   //TO DO
   // console.log();
-  urlDatabase[req.params.id] = req.body.longURL;
+  urlDatabase[req.params.id].longURL = req.body.longURL;
 
   res.redirect("/urls");
 });
@@ -156,7 +156,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //renders individual page for a URL
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars);
 });
 
@@ -171,10 +171,12 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   // console.log("Line 59 req.body: ", req.body);  // Log the POST request body to the console
   let tempString = generateRandomString();
-  urlDatabase[tempString] = req.body.longURL;
+  urlDatabase[tempString] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id
+  };
   res.redirect(`/urls/${tempString}`);
   // res.send("Ok");         // Respond with 'Ok' (we will replace this)
-
 });
 
 
