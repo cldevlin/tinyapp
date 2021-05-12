@@ -12,7 +12,9 @@ app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "aJ48lW" },
-  "9sm5xK": { longURL: "http://www.google.com", userID: "aJ48lW" }
+  "9sm5xK": { longURL: "http://www.google.com", userID: "aJ48lW" },
+  "di5jrf": { longURL: "http://www.abc.com", userID: "zyxwvu" },
+  "kww95he": { longURL: "http://www.def.com", userID: "fght46" }
 };
 
 const users = {
@@ -25,6 +27,11 @@ const users = {
     id: "zyxwvu",
     email: "user2@example.com",
     password: "dishwasher-funk"
+  },
+  "fght46": {
+    id: "fght46",
+    email: "user3@example.com",
+    password: "654321"
   }
 };
 
@@ -47,21 +54,34 @@ function lookUpEmail(email) {
   return null;
 }
 
+function urlsForUser(id) {
+  const output = {};
+  for (let urlID in urlDatabase) {
+    if (urlDatabase[urlID].userID === id) {
+      output[urlID] = urlDatabase[urlID].longURL;
+    }
+  }
+  // console.log("(urlsForUser function) output: ", output);
+  return output;
+}
+
 /////////////////
 //ACCOUNT STUFF//
 /////////////////
 
 //renders login page
 app.get("/login", (req, res) => {
-  // console.log("req.body: ", req.body);
+  if (req.cookies.user_id) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies.user_id] };
   res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
-  console.log("req.body: ", req.body);
+  // console.log("req.body: ", req.body);
   const user_id = lookUpEmail(req.body.email);
-  console.log("user_id: ", user_id);
+  // console.log("user_id: ", user_id);
   if (!user_id) {
     res.statusCode = 403;
     res.end("Error: User does not exist")
@@ -69,7 +89,7 @@ app.post("/login", (req, res) => {
     res.statusCode = 403;
     res.send("Error: incorrect password")
   } else {
-    console.log(users);
+    // console.log(users);
     res.cookie("user_id", user_id);
     res.redirect("/urls");
   }
@@ -139,19 +159,24 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-//updates an existing url in the database, and redirects back to URLs page
+//EDIT URL: updates an existing url in the database, and redirects back to URLs page
 app.post("/urls/:id", (req, res) => {
-  //TO DO
-  // console.log();
-  urlDatabase[req.params.id].longURL = req.body.longURL;
-
-  res.redirect("/urls");
+  if (req.cookies.user_id && req.cookies.user_id === urlDatabase[req.params.id].userID) {
+    urlDatabase[req.params.id].longURL = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    return res.send("Error: you do not have permission to edit this URL");
+  }
 });
 
-// removes a URL resource and redirects back to URLs page
+//DELETE URL: removes a URL resource and redirects back to URLs page
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  if (req.cookies.user_id && req.cookies.user_id === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    return res.send("Error: you do not have permission to delete this URL");
+  }
 });
 
 //renders individual page for a URL
@@ -163,7 +188,7 @@ app.get("/urls/:shortURL", (req, res) => {
 //renders URLs page with list of all the URLs currently in the database
 app.get("/urls", (req, res) => {
   // console.log(req.cookies);
-  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
+  const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
@@ -185,7 +210,11 @@ app.post("/urls", (req, res) => {
 ///////////////
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.cookies.user_id) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/urls.json", (req, res) => {

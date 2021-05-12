@@ -26,27 +26,27 @@
           </thead>
           <tbody>
             <% for (let id in urls) { %>
-              <% if (urls[id].userID===user.id) { %>
-                <tr>
-                  <td>
-                    <%= urls[id].longURL %>
-                  </td>
-                  <td>
-                    <%= id %>
-                  </td>
-                  <td>
-                    <a href="/urls/<%= id %> " class="btn btn-outline-primary btn-sm">Edit</a>
-                  </td>
-                  <td>
-                    <form method="POST" action="/urls/<%= id %>/delete"><button type="submit"
-                        class="btn btn-outline-danger btn-sm">Delete</button></form>
-                  </td>
-                </tr>
-                <% } %>
-                  <% } %>
+              <tr>
+                <td>
+                  <%= urls[id] %>
+                </td>
+                <td>
+                  <%= id %>
+                </td>
+                <td>
+                  <a href="/urls/<%= id %> " class="btn btn-outline-primary btn-sm">Edit</a>
+                </td>
+                <td>
+                  <form method="POST" action="/urls/<%= id %>/delete"><button type="submit"
+                      class="btn btn-outline-danger btn-sm">Delete</button></form>
+                </td>
+              </tr>
+              <% } %>
           </tbody>
         </table>
-        <% } %>
+        <% } else { %>
+          <h4>Please <a href="/login">login</a> to see your URLs!</h4>
+          <% } %>
     </main>
 
     <!-- Bootstrap JS -->
