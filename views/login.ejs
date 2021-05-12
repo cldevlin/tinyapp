@@ -13,8 +13,8 @@
 <body>
   <%- include('partials/_header') %>
     <main style="margin:1em">
-      <h2>Create Account</h2>
-      <form action="/register" method="POST">
+      <h2>Login</h2>
+      <form action="/login" method="POST">
         <!-- email -->
         <div>
           <label for="email">Enter your email: </label>
@@ -22,10 +22,10 @@
         </div>
         <!-- password -->
         <div>
-          <label for="password">Enter a password</label>
+          <label for="password">Enter your password</label>
           <input type="password" name="password" id="password">
         </div>
-        <button class="btn btn-outline-primary" type="submit">Register</button>
+        <button class="btn btn-outline-primary" type="submit">Login</button>
       </form>
 
     </main>

@@ -36,28 +36,43 @@ function generateRandomString() {
   return output;
 }
 
-app.post("/register", (req, res) => {
-  const id = generateRandomString();
-  users[id] = {
-    id,
-    email: req.body.email,
-    password: req.body.password
-  };
-  res.cookie("user_id", id);
-  console.log("users: ", users);
-  res.redirect("/urls");
+function lookUpEmail(email) {
+  console.log("email: ", email);
+  for (let id in users) {
+    console.log("id.email: ", id.email);
+    if (users[id].email === email) {
+      return id;
+    }
+  }
+  return null;
+}
+
+/////////////////
+//ACCOUNT STUFF//
+/////////////////
+
+//renders login page
+app.get("/login", (req, res) => {
+  // console.log("req.body: ", req.body);
+  const templateVars = { user: users[req.cookies.user_id] };
+  res.render("login", templateVars);
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n")
+app.post("/login", (req, res) => {
+  console.log("req.body: ", req.body);
+  const user_id = lookUpEmail(req.body.email);
+  console.log("user_id: ", user_id);
+  if (!user_id) {
+    res.statusCode = 403;
+    res.end("Error: User does not exist")
+  } else if (users[user_id].password !== req.body.password) {
+    res.statusCode = 403;
+    res.send("Error: incorrect password")
+  } else {
+    console.log(users);
+    res.cookie("user_id", user_id);
+    res.redirect("/urls");
+  }
 });
 
 //renders register page
@@ -66,18 +81,40 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
+app.post("/register", (req, res) => {
+  if (req.body.email === "" || req.body.password === "") {
+    res.statusCode = 400;
+    res.end("Please enter an email and password");
+  } else if (users[lookUpEmail(req.body.email)]) {
+    res.statusCode = 400;
+    res.end("Email already exists");
+  } else {
+    const id = generateRandomString();
+    users[id] = {
+      id,
+      email: req.body.email,
+      password: req.body.password
+    };
+    res.cookie("user_id", id);
+    // console.log("users: ", users);
+    res.redirect("/urls");
+  }
+
+  console.log(users);
+});
+
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
-//sets user_id cookie
-app.post("/login", (req, res) => {
-  // console.log("req.body **************** ", req.body);
-  //CHECK THIS:vvvv
-  res.cookie("user_id", req.body.user_id);
-  res.redirect("/urls");
-});
+
+
+
+
+/////////////
+//URL STUFF//
+/////////////
 
 //redirects to the actual page when user clicks on short url link
 app.get("/u/:shortURL", (req, res) => {
@@ -91,13 +128,6 @@ app.get("/u/:shortURL", (req, res) => {
   } else {
     res.redirect(longURL);
   }
-});
-
-//renders URLs page with list of all the URLs currently in the database
-app.get("/urls", (req, res) => {
-  // console.log(req.cookies);
-  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
-  res.render("urls_index", templateVars);
 });
 
 //renders new URL page
@@ -120,11 +150,17 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-
 //renders individual page for a URL
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars);
+});
+
+//renders URLs page with list of all the URLs currently in the database
+app.get("/urls", (req, res) => {
+  // console.log(req.cookies);
+  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
+  res.render("urls_index", templateVars);
 });
 
 //generates a new shortURL, adds it to the database, and redirects to the "show" page
@@ -135,6 +171,20 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${tempString}`);
   // res.send("Ok");         // Respond with 'Ok' (we will replace this)
 
+});
+
+
+
+app.get("/", (req, res) => {
+  res.send("Hello!");
+});
+
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
 
