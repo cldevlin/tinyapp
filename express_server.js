@@ -132,7 +132,11 @@ app.get("/u/:shortURL", (req, res) => {
 
 //renders new URL page
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { user: users[req.cookies.user_id] });
+  if (req.cookies.user_id) {
+    res.render("urls_new", { user: users[req.cookies.user_id] });
+  } else {
+    res.redirect("/login");
+  }
 });
 
 //updates an existing url in the database, and redirects back to URLs page
@@ -174,6 +178,9 @@ app.post("/urls", (req, res) => {
 });
 
 
+///////////////
+//OTHER STUFF//
+///////////////
 
 app.get("/", (req, res) => {
   res.send("Hello!");
