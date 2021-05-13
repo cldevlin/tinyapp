@@ -6,9 +6,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
-const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers')
-
-app.use(express.static('public'));
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
 app.use(cookieSession({
   name: 'session',
@@ -68,10 +66,10 @@ app.post("/login", (req, res) => {
   const userId = getUserByEmail(req.body.email, users);
   if (!userId) {
     res.statusCode = 403;
-    return res.send("<html><h1>Error: User does not exist</h1></html>")
+    return res.send("<html><h1>Error: User does not exist</h1></html>");
   } else if (!bcrypt.compareSync(req.body.password, users[userId].password)) {
     res.statusCode = 403;
-    return res.send("<html><h1>Error: incorrect password</h1></html>")
+    return res.send("<html><h1>Error: incorrect password</h1></html>");
   } else {
     req.session["user_id"] = userId;
     return res.redirect("/urls");
@@ -91,10 +89,10 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
     res.statusCode = 400;
-    return res.send("<html><h1>Please enter an email and password</h1></html>");
+    return res.send("<html><h1>Error: Please enter an email and password</h1></html>");
   } else if (users[getUserByEmail(req.body.email, users)]) {
     res.statusCode = 400;
-    return res.send("<html><h1>Email already exists</h1></html>");
+    return res.send("<html><h1>Error: Email already exists</h1></html>");
   } else {
     const id = generateRandomString();
     users[id] = {
@@ -107,10 +105,7 @@ app.post("/register", (req, res) => {
   }
 });
 
-
-//clear "session.sig"??
 app.post("/logout", (req, res) => {
-  // res.clearCookie("session");
   delete req.session.user_id;
   res.redirect("/urls");
 });
@@ -124,8 +119,8 @@ app.post("/logout", (req, res) => {
 //////////////
 
 //redirects to the actual page when user clicks on short url link
-app.get("/u/:shortURL", (req, res) => {
-  const urlID = urlDatabase[req.params.shortURL];
+app.get("/u/:id", (req, res) => {
+  const urlID = urlDatabase[req.params.id];
   if (urlID === undefined) {
     res.statusCode = 404;
     return res.send("<html><h1>Error: shortURL does not exist</h1></html>");
@@ -143,6 +138,16 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+//DELETE URL: removes a URL resource and redirects back to URLs page
+app.post("/urls/:id/delete", (req, res) => {
+  console.log("req.session", req.session);
+  if (req.session.user_id && req.session.user_id === urlDatabase[req.params.id].userID) {
+    delete urlDatabase[req.params.id];
+    return res.redirect("/urls");
+  }
+  return res.send("<html><h1>Error: you do not have permission to delete this URL</h1></html>");
+});
+
 //EDIT URL: updates an existing url in the database, and redirects back to URLs page
 app.post("/urls/:id", (req, res) => {
   if (req.session.user_id && req.session.user_id === urlDatabase[req.params.id].userID) {
@@ -153,36 +158,36 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
-//DELETE URL: removes a URL resource and redirects back to URLs page
-app.post("/urls/:shortURL/delete", (req, res) => {
-  if (req.session.user_id && req.session.user_id === urlDatabase[req.params.shortURL].userID) {
-    delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls");
-  } else {
-    return res.send("<html><h1>Error: you do not have permission to delete this URL</h1></html>");
-  }
-});
-
 //renders individual page for a URL
-app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+app.get("/urls/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    return res.send("<html><h1>Error: this URL does not exist</h1></html> ");
+  } else if (!req.session.user_id) {
+    return res.send("<html><h1>Error: please login to view this page</h1></html> ");
+  } else if (req.session.user_id !== urlDatabase[req.params.id].userID) {
+    return res.send('<html><h1>Error: you do not have permission to view this URL</h1></html>');
+  }
+  const templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars);
 });
 
 //renders URLs page with list of all the URLs currently in the database
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id] };
+  const templateVars = { urls: urlsForUser(req.session.user_id, urlDatabase), user: users[req.session.user_id] };
   res.render("urls_index", templateVars);
 });
 
 //generates a new shortURL, adds it to the database, and redirects to the "show" page
 app.post("/urls", (req, res) => {
+  if (!req.session.user_id) {
+    return res.send('<html><h1>Error: please login to view this page</h1></html>');
+  }
   let tempString = generateRandomString();
   urlDatabase[tempString] = {
     longURL: req.body.longURL,
     userID: req.session.user_id
   };
-  res.redirect(`/urls/${tempString}`);
+  return res.redirect(`/urls/${tempString}`);
 });
 
 
@@ -190,6 +195,7 @@ app.post("/urls", (req, res) => {
 //OTHER STUFF//
 ///////////////
 
+// redirects to /urls if logged in, or /login if not logged in
 app.get("/", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");
@@ -200,10 +206,6 @@ app.get("/", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n")
 });
 
 
