@@ -3,6 +3,11 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+// const cookieSession = require('cookie-session');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
+app.use(express.static('public'));
 
 app.use(cookieParser())
 
@@ -84,7 +89,7 @@ app.post("/login", (req, res) => {
   // console.log("user_id: ", user_id);
   if (!user_id) {
     res.statusCode = 403;
-    res.end("Error: User does not exist")
+    res.send("<h1>Error: User does not exist</h1>")
   } else if (users[user_id].password !== req.body.password) {
     res.statusCode = 403;
     res.send("Error: incorrect password")
@@ -97,6 +102,9 @@ app.post("/login", (req, res) => {
 
 //renders register page
 app.get("/register", (req, res) => {
+  if (req.cookies.user_id) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies.user_id] };
   res.render("register", templateVars);
 });
@@ -120,7 +128,7 @@ app.post("/register", (req, res) => {
     res.redirect("/urls");
   }
 
-  console.log(users);
+  // console.log(users);
 });
 
 app.post("/logout", (req, res) => {
