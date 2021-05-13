@@ -26,17 +26,17 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", saltRounds)
   },
   "zyxwvu": {
     id: "zyxwvu",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", saltRounds)
   },
   "fght46": {
     id: "fght46",
     email: "user3@example.com",
-    password: "654321"
+    password: bcrypt.hashSync("654321", saltRounds)
   }
 };
 
@@ -89,14 +89,15 @@ app.post("/login", (req, res) => {
   // console.log("user_id: ", user_id);
   if (!user_id) {
     res.statusCode = 403;
-    res.send("<h1>Error: User does not exist</h1>")
-  } else if (users[user_id].password !== req.body.password) {
+    return res.send("<h1>Error: User does not exist</h1>")
+    // } else if (users[user_id].password !== req.body.password) {
+  } else if (!bcrypt.compareSync(req.body.password, users[user_id].password)) {
     res.statusCode = 403;
-    res.send("Error: incorrect password")
+    return res.send("Error: incorrect password")
   } else {
     // console.log(users);
     res.cookie("user_id", user_id);
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
 });
 
@@ -106,26 +107,26 @@ app.get("/register", (req, res) => {
     return res.redirect("/urls");
   }
   const templateVars = { user: users[req.cookies.user_id] };
-  res.render("register", templateVars);
+  return res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
     res.statusCode = 400;
-    res.end("Please enter an email and password");
+    return res.end("Please enter an email and password");
   } else if (users[lookUpEmail(req.body.email)]) {
     res.statusCode = 400;
-    res.end("Email already exists");
+    return res.end("Email already exists");
   } else {
     const id = generateRandomString();
     users[id] = {
       id,
       email: req.body.email,
-      password: req.body.password
+      password: bcrypt.hashSync(req.body.password, saltRounds)
     };
     res.cookie("user_id", id);
     // console.log("users: ", users);
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
 
   // console.log(users);
